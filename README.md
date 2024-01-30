@@ -32,6 +32,7 @@ Still very WIP and not everything is supported yet!
 - [Edwhak_KB](https://github.com/EdwhakKB) - Added some modifiers and fixed stuff + skewNotes
 - [Glowsoony](https://github.com/glowsoony) - Help with some 0.7.X stuff! + skewNotes too
 - [Slushi_Github](https://github.com/Slushi-Github) - Help with reorganisation with haxelib edition
+- [2JENO](https://github.com/2JENO) - Help with the Import.hx thing (fixes some things so thanks!)
 
 ## Installation 
 You need the most recent version of HaxeFlixel for it to work. (5.5.0 as of writing)
@@ -118,36 +119,81 @@ callOnLuas('onCreate', []);
 
 ```
 
-- In FunkinLua.hx (0.7.X exclusive!):
+- In FunkinLua.hx (Found in psychlua folder) (0.7.X exclusive!):
 ```haxe
-// at the start of the HX
+//at the start of the HX
     import modcharting.ModchartFuncs; //to fix any crash lmao
 class FunkinLua
 {
-  //add this variable bellow "public var closed:Bool = false;"
+    //add this variable bellow "public var closed:Bool = false;"
   	public static var instance:FunkinLua = null;
-    // (at the bottom of create())
     #if desktop DiscordClient.addLuaCallbacks(this); #end
     ModchartFuncs.loadLuaFunctions(this); //add this if you want lua functions in scripts
-    //being used in psych engine as an example
+    being used in psych engine as an example
+
 
 ```
+- In HScript (Found in psychlua folder) (0.7.X exclusive!)
+``` haxe
+//under the function (PRESET!)
+//copy and paste this code if you use under SScript 6.1.80
 
-- In Conductor.hx (0.7.X exclusive!):
-```haxe
-
-class Conductor
+override function preset()
 {
-  //add this variable at the end of the code (but inside the class)
-  	public static function changeBPM(newBpm:Float)
-	  {
-		bpm = newBpm;
+	set('Math', Math);
+	set('ModchartEditorState', modcharting.ModchartEditorState);
+	set('ModchartEvent', modcharting.ModchartEvent);
+	set('ModchartEventManager', modcharting.ModchartEventManager);
+	set('ModchartFile', modcharting.ModchartFile);
+	set('ModchartFuncs', modcharting.ModchartFuncs);
+	set('ModchartMusicBeatState', modcharting.ModchartMusicBeatState);
+	set('ModchartUtil', modcharting.ModchartUtil);
+	for (i in ['mod', 'Modifier'])
+		set(i, modcharting.Modifier); //the game crashes without this???????? what??????????? -- fue glow
+	set('ModifierSubValue', modcharting.Modifier.ModifierSubValue);
+	set('ModTable', modcharting.ModTable);
+	set('NoteMovement', modcharting.NoteMovement);
+	set('NotePositionData', modcharting.NotePositionData);
+	set('Playfield', modcharting.Playfield);
+	set('PlayfieldRenderer', modcharting.PlayfieldRenderer);
+	set('SimpleQuaternion', modcharting.SimpleQuaternion);
+	set('SustainStrip', modcharting.SustainStrip);
+	
+	modcharting.ModchartFuncs.loadHScriptFunctions(this);
 
-		crochet = calculateCrochet(bpm);
-		stepCrochet = crochet / 4;
-	  }
+//--(else if you use SScript above or equal to version 6.1.80)--
+
+override function preset()
+{
+	set('Math', Math);
+	setClass(modcharting.ModchartEditorState);
+	setClass(modcharting.ModchartEvent);
+	setClass(modcharting.ModchartEventManager);
+	setClass(modcharting.ModchartFile);
+	setClass(modcharting.ModchartFuncs);
+	setClass(modcharting.ModchartMusicBeatState);
+	setClass(modcharting.ModchartUtil);
+	setClass(modcharting.Modifier); //the game crashes without this???????? what??????????? -- fue glow
+	setClass(modcharting.Modifier.ModifierSubValue);
+	setClass(modcharting.ModTable);
+	setClass(modcharting.NoteMovement);
+	setClass(modcharting.NotePositionData);
+	setClass(modcharting.Playfield);
+	setClass(modcharting.PlayfieldRenderer);
+	setClass(modcharting.SimpleQuaternion);
+	setClass(modcharting.SustainStrip);
+
+//Function initMod -- Init's the mods functions for Hscript (found in psychlua)
+//Place this function anywhere in the HScript class!
+
+public function initMod(mod:modcharting.Modifier)
+{
+	call("initMod", [mod]);
+}
 
 ```
+- In Import.hx, you should copy what mine adds and paste it there
+
 - In Project.xml:
 ```xml
 <!--Set this to the engine you're using!-->

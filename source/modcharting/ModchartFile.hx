@@ -1,4 +1,5 @@
 package modcharting;
+
 import flixel.math.FlxMath;
 import haxe.Exception;
 import haxe.Json;
@@ -18,6 +19,9 @@ import sys.io.File;
 #end
 #if hscript
 import hscript.*;
+#end
+#if (HSCRIPT_ALLOWED && PSYCH && PSYCHVERSION >= "0.7")
+import psychlua.HScript;
 #end
 using StringTools;
 
@@ -56,16 +60,27 @@ class ModchartFile
     private var renderer:PlayfieldRenderer;
     public var scriptListen:Bool = false;
     #if hscript
-    public var customModifiers:Map<String, CustomModifierScript> = new Map<String, CustomModifierScript>();
+    public var customModifiers: #if (HSCRIPT_ALLOWED && PSYCH && PSYCHVERSION >= "0.7") Map<String, HScript> = new Map<String, HScript>(); #else Map<String, CustomModifierScript> = new Map<String, CustomModifierScript>(); #end
     #end
     public var hasDifficultyModchart:Bool = false; //so it loads false as default!
+    #if SCEModchartingTools
+    public var OMANDMS:Bool = false;
+    #end
+    public var suffixForPath:String = ''; //To not do more work lamo.
     
     public function new(renderer:PlayfieldRenderer)
     {
-        #if (PSYCH && PSYCHVERSION >= "0.7")
-            data = loadFromJson(PlayState.SONG.song.toLowerCase(), Difficulty.getString().toLowerCase() == null ? Difficulty.defaultList[PlayState.storyDifficulty] : Difficulty.getString().toLowerCase());
-        #elseif (PSYCH && PSYCHVERSION <= "0.7")
+        suffixForPath = '';
+        #if SCEModchartingTools
+        OMANDMS = ClientPrefs.getGameplaySetting('opponent');
+        if (OMANDMS) suffixForPath = '-opponentMode';
+        #end
+        #if (PSYCH)
+	    #if (PSYCHVERSION >= "0.7")
+           	data = loadFromJson(PlayState.SONG.song.toLowerCase(), Difficulty.getString().toLowerCase() == null ? Difficulty.defaultList[PlayState.storyDifficulty] : Difficulty.getString().toLowerCase());
+	    #elseif (PSYCHVERSION < "0.7")
             data = loadFromJson(PlayState.SONG.song.toLowerCase(), CoolUtil.difficultyString().toLowerCase() == null ? CoolUtil.difficulties[PlayState.storyDifficulty] : CoolUtil.difficultyString().toLowerCase());
+	    #end
         #else 
             data = loadFromJson(PlayState.SONG.song.toLowerCase(), PlayState.storyDifficultyStr);
         #end
@@ -83,12 +98,12 @@ class ModchartFile
 
         var folderShit:String = "";
         
-        var moddyFile:String = Paths.json('songs/' + #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart-' + difficulty.toLowerCase());
-        var moddyFile2:String = Paths.json('songs/' + #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart');
+        var moddyFile:String = Paths.json(#if SCEModchartingTools 'songs/' + #end #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+        var moddyFile2:String = Paths.json(#if SCEModchartingTools 'songs/' + #end #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart' + suffixForPath);
 
         #if MODS_ALLOWED
-        var moddyFileMods:String = Paths.modsJson('songs/' + #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart-' + difficulty.toLowerCase());
-        var moddyFileMods2:String = Paths.modsJson('songs/' + #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart');
+        var moddyFileMods:String = Paths.modsJson(#if SCEModchartingTools 'songs/' + #end #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+        var moddyFileMods2:String = Paths.modsJson(#if SCEModchartingTools 'songs/' + #end #if PSYCH Paths.formatToSongPath(folder) #else PlayState.SONG.song #end + '/modchart' + suffixForPath);
         #end
 
         #if PSYCH
@@ -114,32 +129,32 @@ class ModchartFile
             if (hasDifficultyModchart)
             {
                 rawJson = File.getContent(moddyFileMods).trim();
-                folderShit = moddyFileMods.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                folderShit = moddyFileMods.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
+                trace('${difficulty} Modchart Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
             }
             else
             {
                 rawJson = File.getContent(moddyFileMods2).trim();
                 folderShit = moddyFileMods2.replace("modchart.json", "customMods/");
 
-                trace('${difficulty} Mochart Has Not Been Found In Mods! loading modchart.json');
+                trace('${difficulty} Modchart Has Not Been Found In Mods! loading modchart.json');
             }
             #end
 
             if (hasDifficultyModchart)
             {
                 rawJson = File.getContent(moddyFile).trim();
-                folderShit = moddyFile.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                folderShit = moddyFile.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Found! loading modchart-${difficulty.toLowerCase()}.json');
+                trace('${difficulty} Modchart Found! loading modchart-${difficulty.toLowerCase()}.json');
             }
             else
             {
                 rawJson = File.getContent(moddyFile2).trim();
-                folderShit = moddyFile2.replace("modchart.json", "customMods/");
+                folderShit = moddyFile2.replace('modchart' + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Has Not Been Found! loading modchart.json');
+                trace('${difficulty} Modchart Has Not Been Found! loading modchart.json');
             }
             #else
             #if MODS_ALLOWED
@@ -160,32 +175,32 @@ class ModchartFile
             if (hasDifficultyModchart)
             {
                 rawJson = File.getContent(moddyFileMods).trim();
-                folderShit = moddyFileMods.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                folderShit = moddyFileMods.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
+                trace('${difficulty} Modchart Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
             }
             else
             {
                 rawJson = File.getContent(moddyFileMods2).trim();
-                folderShit = moddyFileMods2.replace("modchart.json", "customMods/");
+                folderShit = moddyFileMods2.replace('modchart' + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Has Not Been Found In Mods! loading modchart.json');
+                trace('${difficulty} Modchart Has Not Been Found In Mods! loading modchart.json');
             }
             #end
 
             if (hasDifficultyModchart)
             {
                 rawJson = File.getContent(moddyFile).trim();
-                folderShit = moddyFile.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                folderShit = moddyFile.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Found! loading modchart-${difficulty.toLowerCase()}.json');
+                trace('${difficulty} Modchart Found! loading modchart-${difficulty.toLowerCase()}.json');
             }
             else
             {
                 rawJson = File.getContent(moddyFile2).trim();
-                folderShit = moddyFile2.replace("modchart.json", "customMods/");
+                folderShit = moddyFile2.replace('modchart' + suffixForPath + '.json', "customMods/");
 
-                trace('${difficulty} Mochart Has Not Been Found! loading modchart.json');
+                trace('${difficulty} Modchart Has Not Been Found! loading modchart.json');
             }
             #end
         }
@@ -204,23 +219,23 @@ class ModchartFile
                 {
 
                     #if LEATHER
-                        filePath = Paths.modsJson("song data/" + folder + '/modchart-' + difficulty.toLowerCase());
-                        folderShit = PolymodAssets.getPath(filePath.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/"));
+                        filePath = Paths.json("song data/" + folder + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+                        folderShit = PolymodAssets.getPath(filePath.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/"));
                     #else 
-                        filePath = Paths.modsJson('songs/' + folder + '/modchart-' + difficulty.toLowerCase());
-                        folderShit = filePath.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                        filePath = Paths.modsJson(#if SCEModchartingTools 'songs/' + #end folder + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+                        folderShit = filePath.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
                     #end
 
-                    trace('${difficulty} Mochart FolderShit Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
+                    trace('${difficulty} Modchart FolderShit Found In Mods! loading modchart-${difficulty.toLowerCase()}.json');
                 }
                 else
                 { 
                     #if LEATHER
-                        filePath = Paths.modsJson("song data/" + folder + '/modchart');
-                        folderShit = PolymodAssets.getPath(filePath.replace("modchart.json", "customMods/"));
+                        filePath = Paths.json("song data/" + folder + '/modchart' + suffixForPath);
+                        folderShit = PolymodAssets.getPath(filePath.replace('modchart' + suffixForPath + '.json', "customMods/"));
                     #else 
-                        filePath = Paths.modsJson('songs/' + folder + '/modchart');
-                        folderShit = filePath.replace("modchart.json", "customMods/");
+                        filePath = Paths.modsJson(#if SCEModchartingTools 'songs/' + #end folder + '/modchart' + suffixForPath);
+                        folderShit = filePath.replace('modchart' + suffixForPath + '.json', "customMods/");
                     #end
 
                     trace('${difficulty} Modchart Has No FolderShit Found In Mods! loading modchart.json');
@@ -231,23 +246,23 @@ class ModchartFile
                 if (hasDifficultyModchart)
                 {
                     #if LEATHER
-                        filePath = Paths.json("song data/" + folder + '/modchart-' + difficulty.toLowerCase());
-                        folderShit = PolymodAssets.getPath(filePath.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/"));
+                        filePath = Paths.json("song data/" + folder + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+                        folderShit = PolymodAssets.getPath(filePath.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/"));
                     #else 
-                        filePath = Paths.json('songs/' + folder + '/modchart-' + difficulty.toLowerCase());
-                        folderShit = filePath.replace("modchart-" + difficulty.toLowerCase() + ".json", "customMods/");
+                        filePath = Paths.json(#if SCEModchartingTools 'songs/' + #end folder + '/modchart-' + difficulty.toLowerCase() + suffixForPath);
+                        folderShit = filePath.replace('modchart-' + difficulty.toLowerCase() + suffixForPath + '.json', "customMods/");
                     #end
 
-                    trace('${difficulty} Mochart FolderShit Found! loading modchart-${difficulty.toLowerCase()}.json');
+                    trace('${difficulty} Modchart FolderShit Found! loading modchart-${difficulty.toLowerCase()}.json');
                 }
                 else
                 {
                     #if LEATHER
-                        filePath = Paths.json("song data/" + folder + '/modchart');
-                        folderShit = PolymodAssets.getPath(filePath.replace("modchart.json", "customMods/"));
+                        filePath = Paths.json("song data/" + folder + '/modchart' + suffixForPath);
+                        folderShit = PolymodAssets.getPath(filePath.replace('modchart' + suffixForPath + '.json', "customMods/"));
                     #else 
-                        filePath = Paths.json('songs/' + folder + '/modchart');
-                        folderShit = filePath.replace("modchart.json", "customMods/");
+                        filePath = Paths.json(#if SCEModchartingTools 'songs/' + #end folder + '/modchart' + suffixForPath);
+                        folderShit = filePath.replace('modchart' + suffixForPath + '.json', "customMods/");
                     #end
 
                     trace('${difficulty} Modchart Has No FolderShit Found! loading modchart.json');
@@ -284,7 +299,7 @@ class ModchartFile
                     if(file.endsWith('.hx')) //custom mods!!!!
                     {
                         var scriptStr = File.getContent(folderShit + file);
-                        var script = new CustomModifierScript(scriptStr);
+			            var script = #if (HSCRIPT_ALLOWED && PSYCH && PSYCHVERSION >= "0.7") new HScript(null, scriptStr, null) #else new CustomModifierScript(scriptStr) #end;
                         customModifiers.set(file.replace(".hx", ""), script);
                         trace('loaded custom mod: ' + file);
                     }
