@@ -58,17 +58,23 @@ import modcharting.PlayfieldRenderer;
 
 override public function create()
 {
+	//Add this before function create() (For Psych 0.7.1+)
+	var backupGpu:Bool;
 
-  //Add this before camfollow stuff and after strumLineNotes and notes have been made
-  playfieldRenderer = new PlayfieldRenderer(strumLineNotes, notes, this);
-  playfieldRenderer.cameras = [camHUD];
-  add(playfieldRenderer);
-  add(grpNoteSplashes); /*place splashes in front (add this if the engine has splashes).
-  If you have added this: remove(or something) the add(grpNoteSplashes); which is by default below the add(strumLineNotes);*/
+	//Add this before generateSong(); (For Psych 0.7.1+)
+	backupGpu = ClientPrefs.data.cacheOnGPU;
+	ClientPrefs.data.cacheOnGPU = false;
 
-  //if you use PSYCH 0.6.3 use this code
-  ModchartFuncs.loadLuaFunctions(); //add this if you want lua functions in scripts
-  //being used in psych engine as an example
+	//Add this before camfollow stuff and after strumLineNotes and notes have been made
+	playfieldRenderer = new PlayfieldRenderer(strumLineNotes, notes, this);
+	playfieldRenderer.cameras = [camHUD];
+	add(playfieldRenderer);
+	add(grpNoteSplashes); /*place splashes in front (add this if the engine has splashes).
+	If you have added this: remove(or something) the add(grpNoteSplashes); which is by default below the add(strumLineNotes);*/
+
+	//if you use PSYCH 0.6.3 use this code
+	ModchartFuncs.loadLuaFunctions(); //add this if you want lua functions in scripts
+	//being used in psych engine as an example
 
 callOnLuas('onCreatePost', []);
       
@@ -80,6 +86,10 @@ public function startCountdown():Void
   
   //add after generating strums
   NoteMovement.getDefaultStrumPos(this);
+
+//Find this line and then add it (For Psych 0.7.1+)
+override function destroy() {
+	ClientPrefs.data.cacheOnGPU = backupGpu;
 ```
 
 - In StrumNote.hx:
