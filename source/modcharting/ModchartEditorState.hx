@@ -344,6 +344,9 @@ class ModchartEditorState extends #if SCEModchartingTools states.MusicBeatState 
     var inst:FlxSound;
 
     public var opponentMode:Bool = false;
+    #if PSYCH
+    var backupGpu:Bool;
+    #end
 
     #if SCEModchartingTools
 	var col:FlxColor = 0xFFFFD700;
@@ -359,6 +362,10 @@ class ModchartEditorState extends #if SCEModchartingTools states.MusicBeatState 
     }
     override public function create()
     {	
+    #if (PSYCH && PSYCHVERSION >= "0.7.1")
+    backupGpu = ClientPrefs.data.cacheOnGPU;
+    ClientPrefs.data.cacheOnGPU = false;
+    #end
 	#if PSYCH
 	Paths.clearStoredMemory();
 	Paths.clearUnusedMemory();
@@ -575,10 +582,13 @@ class ModchartEditorState extends #if SCEModchartingTools states.MusicBeatState 
         hideUI.y -= hideUI.height;
         hideUI.x -= hideUI.width;
         add(hideUI);
-
-
-        
     }
+    #if (PSYCH && PSYCHVERSION >= "0.7.1")
+    override public function destroy() {
+        ClientPrefs.data.cacheOnGPU = backupGpu;
+        super.destroy();
+    }
+    #end
     var dirtyUpdateNotes:Bool = false;
     var dirtyUpdateEvents:Bool = false;
     var dirtyUpdateModifiers:Bool = false;
