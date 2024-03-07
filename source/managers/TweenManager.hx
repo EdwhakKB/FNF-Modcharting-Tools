@@ -9,14 +9,14 @@ import flixel.tweens.misc.*;
 
 class TweenManager extends FlxTweenManager
 {
-	public function bezierPathTween(Object:Dynamic, Values:Dynamic<Array<Float>>, Duration:Float = 1, ?Options:TweenOptions):BezierPathTween{
+	public override function bezierPathTween(Object:Dynamic, Values:Dynamic<Array<Float>>, Duration:Float = 1, ?Options:TweenOptions):BezierPathTween{
 		@:privateAccess{
 			var tween = new BezierPathTween(Options, this);
 			tween.tween(Object, Values, Duration);
 			return add(tween);
 		}
 	}
-	public function bezierPathNumTween(Points:Array<Float>, Duration:Float = 1, ?Options:TweenOptions,?TweenFunction:Float->Void):BezierPathNumTween{
+	public override function bezierPathNumTween(Points:Array<Float>, Duration:Float = 1, ?Options:TweenOptions,?TweenFunction:Float->Void):BezierPathNumTween{
 		@:privateAccess{
 			var tween = new BezierPathNumTween(Options, this);
 			tween.tween(Points, Duration, TweenFunction);
