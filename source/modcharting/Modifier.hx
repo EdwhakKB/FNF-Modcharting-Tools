@@ -1868,7 +1868,7 @@ class ShakeNotesModifier extends Modifier
     }
 }
     
-class TordnadoModifier extends Modifier
+class TornadoModifier extends Modifier
 {
     override function setupSubValues()
     {
