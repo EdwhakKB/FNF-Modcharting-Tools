@@ -6,150 +6,63 @@ import flixel.math.FlxAngle;
 import openfl.geom.Vector3D;
 import flixel.FlxG;
 
-#if LEATHER
-import states.PlayState;
-import game.Note;
-import game.Conductor;
-#elseif (PSYCH && PSYCHVERSION >= "0.7")
 import states.PlayState;
 import objects.Note;
-#else
-import PlayState;
-import Note;
-#end
 
 using StringTools;
 
 class ModchartUtil
 {
-    public static function getDownscroll(instance:ModchartMusicBeatState)
+    public static function getDownscroll(instance:ModchartMusicBeatState):Bool
     {
         //need to test each engine
         //not expecting all to work
-        #if (PSYCH && !(PSYCHVERSION >= "0.7"))
-        return ClientPrefs.downScroll;
-        #elseif (PSYCH && PSYCHVERSION >= "0.7")
         return ClientPrefs.data.downScroll;
-        #elseif LEATHER
-        return utilities.Options.getData("downscroll");
-        #elseif ANDROMEDA //dunno why youd use this on andromeda but whatever, already got its own cool modchart system
-        return instance.currentOptions.downScroll;
-        #elseif KADE 
-        return PlayStateChangeables.useDownscroll;
-        #elseif FOREVER_LEGACY //forever might not work just yet because of the multiple strumgroups
-        return Init.trueSettings.get('Downscroll');
-        #elseif FPSPLUS 
-        return Config.downscroll;
-        #elseif MIC_D_UP //basically no one uses this anymore
-        return MainVariables._variables.scroll == "down"
-        #else 
-        return false;
-        #end
     }
-    public static function getMiddlescroll(instance:ModchartMusicBeatState)
+    public static function getMiddlescroll(instance:ModchartMusicBeatState):Bool
     {
-        #if (PSYCH && !(PSYCHVERSION >= "0.7"))
-        return ClientPrefs.middleScroll;
-        #elseif (PSYCH && PSYCHVERSION >= "0.7")
         return ClientPrefs.data.middleScroll;
-        #elseif LEATHER
-        return utilities.Options.getData("middlescroll");
-        #else 
-        return false;
-        #end
     }
-    public static function getScrollSpeed(instance:PlayState)
+    public static function getScrollSpeed(instance:PlayState):Float
     {
         if (instance == null)
-            return PlayState.SONG.speed;
+            return PlayState.currentChart.scrollSpeed;
 
-        #if (PSYCH || ANDROMEDA) 
-        return instance.songSpeed;
-        #elseif LEATHER
-        @:privateAccess
-        return instance.speed;
-        #elseif KADE 
-        return PlayStateChangeables.scrollSpeed == 1 ? PlayState.SONG.speed : PlayStateChangeables.scrollSpeed;
-        #else 
-        return PlayState.SONG.speed; //most engines just use this
-        #end
+        return PlayState.instance?.songSpeed; //most engines just use this
     }
 
-    public static function getIsPixelNotes(instance:ModchartMusicBeatState)
+    public static function getIsPixelNotes(instance:ModchartMusicBeatState):Bool
     {
         if (instance == null)
             return false;
-        #if SCEModchartingTools
         return PlayState.isPixelNotes;
-        #else
-        return false;
-        #end
     }
 
 
-    public static function getIsPixelStage(instance:ModchartMusicBeatState)
+    public static function getIsPixelStage(instance:ModchartMusicBeatState):Bool
     {
         if (instance == null)
             return false;
-        #if LEATHER
-        return PlayState.SONG.ui_Skin == 'pixel';
-        #else 
         return PlayState.isPixelStage;
-        #end
     }
 
-    public static function getNoteOffsetX(daNote:Note, instance:ModchartMusicBeatState)
+    public static function getNoteOffsetX(daNote:Note, instance:ModchartMusicBeatState):Float
     {
-        #if PSYCH
         return daNote.offsetX;
-        #elseif LEATHER 
-        //fuck
-        var offset:Float = 0;
-       
-        var lane = daNote.noteData;
-        if (daNote.mustPress)
-            lane += NoteMovement.keyCount;
-        var strum = instance.playfieldRenderer.strumGroup.members[lane];
-
-        var arrayVal = Std.string([lane, daNote.arrow_Type, daNote.isSustainNote]);
-
-        if (!NoteMovement.leatherEngineOffsetStuff.exists(arrayVal))
-        {
-            var tempShit:Float = 0.0;
-
-            
-            var targetX = NoteMovement.defaultStrumX[lane];
-            var xPos = targetX;
-            while (Std.int(xPos + (daNote.width / 2)) != Std.int(targetX + (strum.width / 2)))
-            {
-                xPos += (xPos + daNote.width > targetX + strum.width ? -0.1 : 0.1);
-                tempShit += (xPos + daNote.width > targetX + strum.width ? -0.1 : 0.1);
-            }
-            //trace(arrayVal);
-            //trace(tempShit);
-
-            NoteMovement.leatherEngineOffsetStuff.set(arrayVal, tempShit);
-        }
-        offset = NoteMovement.leatherEngineOffsetStuff.get(arrayVal);
-        
-        return offset;
-        #else 
-        return (daNote.isSustainNote ? 37 : 0); //the magic number
-        #end
     }
 
     static var currentFakeCrochet:Float = -1;
     static var lastBpm:Float = -1;
 
-    public static function getFakeCrochet()
+    public static function getFakeCrochet():Float
     {
-        if (PlayState.SONG.bpm != lastBpm)
+        if (PlayState.currentChart.timeChanges[0].bpm != lastBpm)
         {
-            currentFakeCrochet = (60 / PlayState.SONG.bpm) * 1000; //only need to calculate once
-            lastBpm = PlayState.SONG.bpm;
+            currentFakeCrochet = (60 / PlayState.currentChart.timeChanges[0].bpm) * 1000; //only need to calculate once
+            lastBpm = PlayState.currentChart.timeChanges[0].bpm;
         }
         return currentFakeCrochet;
-            
+
     }
 
     public static var zNear:Float = 0;
@@ -159,7 +72,7 @@ class ModchartUtil
     /**
         Converts a Vector3D to its in world coordinates using perspective math
     **/
-    public static function calculatePerspective(pos:Vector3D, FOV:Float, offsetX:Float = 0, offsetY:Float = 0)
+    public static function calculatePerspective(pos:Vector3D, FOV:Float, offsetX:Float = 0, offsetY:Float = 0):Vector3D
     {
 
         /* math from opengl lol
@@ -199,8 +112,6 @@ class ModchartUtil
         pos.x = xPerspective+(FlxG.width*0.5); //offset it back to normal
         pos.y = yPerspective+(FlxG.height*0.5);
         pos.z = zPerspectiveOffset;
-
-        
 
         //pos.z -= 1;
         //pos = perspectiveMatrix.transformVector(pos);
@@ -271,21 +182,20 @@ class ModchartUtil
 		return FlxEase.linear;
 	}
 
-
-    public static function getTimeFromBeat(beat:Float)
+    public static function getTimeFromBeat(beat:Float):Float
     {
         var totalTime:Float = 0;
-        var curBpm = Conductor.bpm;
-        if (PlayState.SONG != null)
-            curBpm = PlayState.SONG.bpm;
+        var curBpm = Conductor.instance.bpm;
+        if (PlayState.currentChart != null)
+            curBpm = PlayState.currentChart.timeChanges[0].bpm;
         for (i in 0...Math.floor(beat))
         {
-            if (Conductor.bpmChangeMap.length > 0)
+            if (PlayState.currentChart.timeChanges.length > 0)
             {
-                for (j in 0...Conductor.bpmChangeMap.length)
+                for (j in 0...PlayState.currentChart.timeChanges.length)
                 {
-                    if (totalTime >= Conductor.bpmChangeMap[j].songTime)
-                        curBpm = Conductor.bpmChangeMap[j].bpm;
+                    if (totalTime >= PlayState.currentChart.timeChanges[j].timeStamp)
+                        curBpm = PlayState.currentChart.timeChanges[j].bpm;
                 }
             }
             totalTime += (60/curBpm)*1000;

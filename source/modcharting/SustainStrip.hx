@@ -2,13 +2,7 @@ package modcharting;
 
 import flixel.graphics.tile.FlxDrawTrianglesItem.DrawData;
 import openfl.geom.Vector3D;
-#if LEATHER
-import game.Note;
-#elseif (PSYCH && PSYCHVERSION >= "0.7")
 import objects.Note;
-#else
-import Note;
-#end
 import flixel.FlxStrip;
 
 class SustainStrip extends FlxStrip
@@ -22,7 +16,7 @@ class SustainStrip extends FlxStrip
         1,1, //bottom right 
     ];
     private static final noteIndices:Array<Int> = [
-        0,1,2,1,3,2, 2,3,4,3,4,5
+        0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 4, 5
         //makes 4 triangles
     ];
 
@@ -31,10 +25,10 @@ class SustainStrip extends FlxStrip
     override public function new(daNote:Note)
     {
         this.daNote = daNote;
-        daNote.alpha = 1;
+        this.daNote.alpha = 1;
         super(0,0);
-        loadGraphic(daNote.updateFramePixels());
-        shader = daNote.shader;
+        loadGraphic(this.daNote.updateFramePixels());
+        this.shader = this.daNote.shader;
         for (uv in noteUV)
         {
             uvtData.push(uv);
@@ -42,6 +36,13 @@ class SustainStrip extends FlxStrip
         }
         for (ind in noteIndices)
             indices.push(ind);
+    }
+
+    public var handleRendering:Bool = true;
+
+    override public function draw()
+    {
+        if (handleRendering) super.draw();
     }
 
     public function constructVertices(noteData:NotePositionData, thisNotePos:Vector3D, nextHalfNotePos:NotePositionData, nextNotePos:NotePositionData, flipGraphic:Bool, reverseClip:Bool)

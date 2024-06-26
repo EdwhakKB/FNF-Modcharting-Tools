@@ -10,20 +10,9 @@ import llua.State;
 import llua.Convert;
 #end
 
-#if LEATHER
-import states.PlayState;
-import game.Conductor;
-#if linc_luajit
-import modding.ModchartUtilities;
-#end
-import modding.scripts.languages.HScript;
-#end
-
-#if (PSYCH && PSYCHVERSION >= "0.7")
 #if LUA_ALLOWED
 import psychlua.FunkinLua;
 import psychlua.HScript as FunkinHScript;
-#end
 #end
 
 import modcharting.Modifier;
@@ -39,128 +28,55 @@ using StringTools;
 //for lua and hscript
 class ModchartFuncs
 {
-    public static function loadLuaFunctions(#if (PSYCH && PSYCHVERSION >= "0.7") funkin:FunkinLua #end)
+    public static function loadLuaFunctions(funk:FunkinLua)
     {
-        #if PSYCH
         #if LUA_ALLOWED
-        #if !(PSYCHVERSION >= "0.7")
-        for (funkin in PlayState.instance.luaArray)
-        {
-            #if hscript
-            funkin.initHaxeModule();
-            #end
-        #end
-            Lua_helper.add_callback(funkin.lua, 'startMod', function(name:String, modClass:String, type:String = '', pf:Int = -1){
-                startMod(name,modClass,type,pf);
+        funk.set('startMod', function(name:String, modClass:String, type:String = '', pf:Int = -1){
+            startMod(name,modClass,type,pf);
 
-                PlayState.instance.playfieldRenderer.modifierTable.reconstructTable(); //needs to be reconstructed for lua modcharts
-            });
-            Lua_helper.add_callback(funkin.lua, 'setMod', function(name:String, value:Float){
-                setMod(name, value);
-            });
-            Lua_helper.add_callback(funkin.lua, 'setSubMod', function(name:String, subValName:String, value:Float){
-                setSubMod(name, subValName,value);
-            });
-            Lua_helper.add_callback(funkin.lua, 'setModTargetLane', function(name:String, value:Int){
-                setModTargetLane(name, value);
-            });
-            Lua_helper.add_callback(funkin.lua, 'setModPlayfield', function(name:String, value:Int){
-                setModPlayfield(name,value);
-            });
-            Lua_helper.add_callback(funkin.lua, 'addPlayfield', function(?x:Float = 0, ?y:Float = 0, ?z:Float = 0){
-                addPlayfield(x,y,z);
-            });
-            Lua_helper.add_callback(funkin.lua, 'removePlayfield', function(idx:Int){
-                removePlayfield(idx);
-            });
-            Lua_helper.add_callback(funkin.lua, 'tweenModifier', function(modifier:String, val:Float, time:Float, ease:String, ?tag:String = null){
-                tweenModifier(modifier,val,time,ease,null,tag);
-            });
-            Lua_helper.add_callback(funkin.lua, 'tweenModifierSubValue', function(modifier:String, subValue:String, val:Float, time:Float, ease:String, ?tag:String = null){
-                tweenModifierSubValue(modifier,subValue,val,time,ease,null,tag);
-            });
-            Lua_helper.add_callback(funkin.lua, 'setModEaseFunc', function(name:String, ease:String){
-                setModEaseFunc(name,ease);
-            });
-            Lua_helper.add_callback(funkin.lua, 'set', function(beat:Float, argsAsString:String){
-                set(beat, argsAsString);
-            });
-            Lua_helper.add_callback(funkin.lua, 'ease', function(beat:Float, time:Float, easeStr:String, argsAsString:String, ?tag:String = null){
-                ease(beat, time, easeStr, argsAsString, null, tag);                
-            });
-            #if !(PSYCHVERSION >= "0.7") } #end
+            PlayState.instance.playfieldRenderer.modifierTable.reconstructTable(); //needs to be reconstructed for lua modcharts
+        });
+        funk.set('setMod', function(name:String, value:Float){
+            setMod(name, value);
+        });
+        funk.set('setSubMod', function(name:String, subValName:String, value:Float){
+            setSubMod(name, subValName,value);
+        });
+        funk.set('setModTargetLane', function(name:String, value:Int){
+            setModTargetLane(name, value);
+        });
+        funk.set('setModPlayfield', function(name:String, value:Int){
+            setModPlayfield(name,value);
+        });
+        funk.set('addPlayfield', function(?x:Float = 0, ?y:Float = 0, ?z:Float = 0){
+            addPlayfield(x,y,z);
+        });
+        funk.set('removePlayfield', function(idx:Int){
+            removePlayfield(idx);
+        });
+        funk.set('tweenModifier', function(modifier:String, val:Float, time:Float, ease:String){
+            tweenModifier(modifier,val,time,ease);
+        });
+        funk.set('tweenModifierSubValue', function(modifier:String, subValue:String, val:Float, time:Float, ease:String){
+            tweenModifierSubValue(modifier,subValue,val,time,ease);
+        });
+        funk.set('setModEaseFunc', function(name:String, ease:String){
+            setModEaseFunc(name,ease);
+        });
+        funk.set('set', function(beat:Float, argsAsString:String){
+            set(beat, argsAsString);
+        });
+        funk.set('ease', function(beat:Float, time:Float, easeStr:String, argsAsString:String){
+            ease(beat, time, easeStr, argsAsString);                
+        });
             
-            #if (PSYCHVERSION >= "0.7")
-                loadHaxeFunctions(funkin);
-            #end
-        #end
-        #if !(PSYCHVERSION >= "0.7")
-            #if hscript
-            if (FunkinLua.hscript != null)
-            {
-                FunkinLua.hscript.variables.set('Math', Math);
-                FunkinLua.hscript.variables.set('PlayfieldRenderer', PlayfieldRenderer);
-                FunkinLua.hscript.variables.set('ModchartUtil', ModchartUtil);
-                FunkinLua.hscript.variables.set('Modifier', Modifier);
-                FunkinLua.hscript.variables.set('NoteMovement', NoteMovement);
-                FunkinLua.hscript.variables.set('NotePositionData', NotePositionData);
-                FunkinLua.hscript.variables.set('ModchartFile', ModchartFile);
-            }
-            #end
-        #end
-
-        #elseif (LEATHER && linc_luajit)
-        @:privateAccess
-        {
-            ModchartUtilities.instance.setLuaFunction('startMod', function(name:String, modClass:String, type:String = '', pf:Int = -1){
-                startMod(name,modClass,type,pf);
-
-                PlayState.instance.playfieldRenderer.modifierTable.reconstructTable(); //needs to be reconstructed for lua modcharts
-            });
-            ModchartUtilities.instance.setLuaFunction('setMod', function(name:String, value:Float){
-                setMod(name, value);
-            });
-            ModchartUtilities.instance.setLuaFunction('setSubMod', function(name:String, subValName:String, value:Float){
-                setSubMod(name, subValName,value);
-            });
-            ModchartUtilities.instance.setLuaFunction('setModTargetLane', function(name:String, value:Int){
-                setModTargetLane(name, value);
-            });
-            ModchartUtilities.instance.setLuaFunction('setModPlayfield', function(name:String, value:Int){
-                setModPlayfield(name,value);
-            });
-            ModchartUtilities.instance.setLuaFunction('addPlayfield', function(?x:Float = 0, ?y:Float = 0, ?z:Float = 0){
-                addPlayfield(x,y,z);
-            });
-            ModchartUtilities.instance.setLuaFunction('removePlayfield', function(idx:Int){
-                removePlayfield(idx);
-            });
-            ModchartUtilities.instance.setLuaFunction('tweenModifier', function(modifier:String, val:Float, time:Float, ease:String, ?tag:String = null){
-                tweenModifier(modifier,val,time,ease,null,tag);
-            });
-            ModchartUtilities.instance.setLuaFunction('tweenModifierSubValue', function(modifier:String, subValue:String, val:Float, time:Float, ease:String, ?tag:String = null){
-                tweenModifierSubValue(modifier,subValue,val,time,ease,null,tag);
-            });
-            ModchartUtilities.instance.setLuaFunction('setModEaseFunc', function(name:String, ease:String){
-                setModEaseFunc(name,ease);
-            });
-            ModchartUtilities.instance.setLuaFunction('setModifier', function(beat:Float, argsAsString:String){
-                set(beat, argsAsString);
-            });
-            ModchartUtilities.instance.setLuaFunction('easeModifier', function(beat:Float, time:Float, easeStr:String, argsAsString:String, ?tag:String = null){
-                ease(beat, time, easeStr, argsAsString, null, tag);           
-            });
-            ModchartUtilities.instance.setLuaFunction('ease', function(beat:Float, time:Float, easeStr:String, argsAsString:String, ?tag:String = null){
-                ease(beat, time, easeStr, argsAsString, null, tag);           
-            });
-        }
+        loadHaxeFunctions(funk);
         #end
     }
 
     
-    public static function loadHaxeFunctions(#if PSYCH funkin:FunkinLua#end)
+    public static function loadHaxeFunctions(funkin:FunkinLua)
         {
-            #if (PSYCH && PSYCHVERSION >= "0.7")
             #if HSCRIPT_ALLOWED
             FunkinHScript.initHaxeModule(funkin);
     
@@ -185,18 +101,7 @@ class ModchartFuncs
                 #end
             }
             #end
-            #elseif LEATHER
-            /*if(flixel.FlxG.state == states.PlayState.instance){
-                HScript.instance.interp.variables.set('PlayfieldRenderer', PlayfieldRenderer);
-                HScript.instance.interp.variables.set('ModchartUtil', ModchartUtil);
-                HScript.instance.interp.variables.set('Modifier', Modifier);
-                HScript.instance.interp.variables.set('NoteMovement', NoteMovement);
-                HScript.instance.interp.variables.set('NotePositionData', NotePositionData);
-                HScript.instance.interp.variables.set('ModchartFile', ModchartFile);
-            }*/
-            #end
         }
-    #if (HSCRIPT_ALLOWED && PSYCH && PSYCHVERSION >= "0.7")
     public static function loadHScriptFunctions(parent:Dynamic)
     {
         #if HSCRIPT_ALLOWED
@@ -226,24 +131,23 @@ class ModchartFuncs
         parent.set('removePlayfield', function(idx:Int){
             removePlayfield(idx);
         });
-        parent.set('tweenModifier', function(modifier:String, val:Float, time:Float, ease:String, ?tag:String = null){
-            tweenModifier(modifier,val,time,ease,null,tag);
+        parent.set('tweenModifier', function(modifier:String, val:Float, time:Float, ease:String){
+            tweenModifier(modifier,val,time,ease);
         });
-        parent.set('tweenModifierSubValue', function(modifier:String, subValue:String, val:Float, time:Float, ease:String, ?tag:String = null){
-            tweenModifierSubValue(modifier,subValue,val,time,ease,null,tag);
+        parent.set('tweenModifierSubValue', function(modifier:String, subValue:String, val:Float, time:Float, ease:String){
+            tweenModifierSubValue(modifier,subValue,val,time,ease);
         });
-        parent.set('setModEaseFunc', function(name:String, ease:String, ?tag:String = null){
+        parent.set('setModEaseFunc', function(name:String, ease:String){
             setModEaseFunc(name,ease);
         });
         parent.set('setModValue', function(beat:Float, argsAsString:String){
             set(beat, argsAsString);
         });
-        parent.set('easeModValue', function(beat:Float, time:Float, easeStr:String, argsAsString:String, ?tag:String = null){
-            ease(beat, time, easeStr, argsAsString, null, tag);
+        parent.set('easeModValue', function(beat:Float, time:Float, easeStr:String, argsAsString:String){
+            ease(beat, time, easeStr, argsAsString);
         });
         #end
     }
-    #end
 
     public static function startMod(name:String, modClass:String, type:String = '', pf:Int = -1, ?instance:ModchartMusicBeatState = null)
     {
@@ -352,18 +256,18 @@ class ModchartFuncs
         instance.playfieldRenderer.playfields.remove(instance.playfieldRenderer.playfields[idx]);
     }
 
-    public static function tweenModifier(modifier:String, val:Float, time:Float, ease:String, ?instance:ModchartMusicBeatState = null, ?tag:String = null)
+    public static function tweenModifier(modifier:String, val:Float, time:Float, ease:String, ?instance:ModchartMusicBeatState = null)
     {
         if (instance == null)
             instance = PlayState.instance;
-        instance.playfieldRenderer.modifierTable.tweenModifier(modifier, val, time, ease, Modifier.beat, tag);
+        instance.playfieldRenderer.modifierTable.tweenModifier(modifier,val,time,ease, Modifier.beat);
     }
 
-    public static function tweenModifierSubValue(modifier:String, subValue:String, val:Float, time:Float, ease:String, ?instance:ModchartMusicBeatState = null, ?tag:String = null)
+    public static function tweenModifierSubValue(modifier:String, subValue:String, val:Float, time:Float, ease:String, ?instance:ModchartMusicBeatState = null)
     {
         if (instance == null)
             instance = PlayState.instance;
-        instance.playfieldRenderer.modifierTable.tweenModifierSubValue(modifier, subValue, val, time, ease, Modifier.beat, tag);
+        instance.playfieldRenderer.modifierTable.tweenModifierSubValue(modifier,subValue,val,time,ease, Modifier.beat);
     }
 
     public static function setModEaseFunc(name:String, ease:String, ?instance:ModchartMusicBeatState = null)
@@ -420,7 +324,7 @@ class ModchartFuncs
             }
         }, args);
     }
-    public static function ease(beat:Float, time:Float, ease:String, argsAsString:String, ?instance:ModchartMusicBeatState = null, ?tag:String = null):Void
+    public static function ease(beat:Float, time:Float, ease:String, argsAsString:String, ?instance:ModchartMusicBeatState = null) : Void
     {
         if (instance == null)
         {
@@ -428,7 +332,7 @@ class ModchartFuncs
             if (instance.playfieldRenderer.modchart != null)
                 if (instance.playfieldRenderer.modchart.scriptListen)
                 {
-                    instance.playfieldRenderer.modchart.data.events.push(["ease", [beat, time, ease, argsAsString, tag]]);
+                    instance.playfieldRenderer.modchart.data.events.push(["ease", [beat, time, ease, argsAsString]]);
                 }
         }
             
@@ -451,10 +355,10 @@ class ModchartFuncs
                     var modName = subModCheck[0];
                     var subModName = subModCheck[1];
                     //trace(subModCheck);
-                    instance.playfieldRenderer.modifierTable.tweenModifierSubValue(modName, subModName, value, time*Conductor.crochet*0.001, ease, beat, tag);
+                    instance.playfieldRenderer.modifierTable.tweenModifierSubValue(modName,subModName,value,time*Conductor.instance.beatLengthMs*0.001,ease, beat);
                 }
                 else
-                    instance.playfieldRenderer.modifierTable.tweenModifier(name, value, time*Conductor.crochet*0.001, ease, beat, tag);
+                    instance.playfieldRenderer.modifierTable.tweenModifier(name,value,time*Conductor.instance.beatLengthMs*0.001,ease, beat);
                 
             }
         };

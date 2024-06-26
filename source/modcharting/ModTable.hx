@@ -3,9 +3,6 @@ package modcharting;
 import flixel.math.FlxMath;
 import flixel.tweens.FlxTween;
 import modcharting.Modifier;
-#if LEATHER
-import game.Conductor;
-#end
 
 class ModTable
 {
@@ -26,30 +23,30 @@ class ModTable
         reconstructTable();
     }
 
-    public function add(mod:Modifier) : Void
+    public function add(mod:Modifier):Void
     {
         mod.instance = instance;
         mod.renderer = renderer;
         remove(mod.tag); //in case you replace one???
         modifiers.set(mod.tag, mod);
     }
-    public function remove(tag:String) : Void
+    public function remove(tag:String):Void
     {
         if (modifiers.exists(tag))
             modifiers.remove(tag);
     }
-    public function clear() : Void
+    public function clear():Void
     {
         modifiers.clear();
 
         loadDefaultModifiers();
     }
-    public function resetMods() : Void
+    public function resetMods():Void
     {
         for (mod in modifiers)
             mod.reset();
     }
-    public function setModTargetLane(tag:String, lane:Int) : Void
+    public function setModTargetLane(tag:String, lane:Int):Void
     {
         if (modifiers.exists(tag))
         {
@@ -57,7 +54,7 @@ class ModTable
         }
     }
 
-    public function loadDefaultModifiers() : Void
+    public function loadDefaultModifiers():Void
     {
         //default modifiers
         add(new XModifier('x'));
@@ -78,7 +75,7 @@ class ModTable
         }
     }
 
-    public function reconstructTable() : Void
+    public function reconstructTable():Void
     {
         table = [];
 
@@ -101,7 +98,6 @@ class ModTable
             }
         }
     }
-
     public function applyStrumMods(noteData:NotePositionData, lane:Int, pf:Int) : Void
     {
         if (table[pf] != null && table[pf][lane] != null)
@@ -156,36 +152,25 @@ class ModTable
         return incomingAngle;
     }
 
-
-    
-    public function tweenModifier(modifier:String, val:Float, time:Float, ease:String, beat:Float, ?tag:String = null)
+    public function tweenModifier(modifier:String, val:Float, time:Float, ease:String, beat:Float)
     {
         var modifiers:Map<String, Modifier> = renderer.modifierTable.modifiers;
         if (modifiers.exists(modifier))
         {       
             var easefunc = ModchartUtil.getFlxEaseByString(ease);  
-            if (Conductor.songPosition >= ModchartUtil.getTimeFromBeat(beat)+(time*1000)) //cancel if should have ended
+            if (Conductor.instance.songPosition >= ModchartUtil.getTimeFromBeat(beat)+(time*1000)) //cancel if should have ended
             {
                 modifiers.get(modifier).currentValue = val;
                 return;
             }
             time /= renderer.speed;
             var tween = renderer.createTween(modifiers.get(modifier), {currentValue: val}, time, {ease: easefunc,
-                onComplete: function(twn:FlxTween) {
-                    var modifierTag:String = (tag != null ? tag : modifier);
-                    #if PSYCH
-                        #if (PSYCHVERSION >= "0.7")
-                        PlayState.instance.callOnScripts("onModifierComplete", [modifierTag]);
-                        #else
-                        PlayState.instance.callOnLuas("onModifierComplete", [modifierTag]);
-                        #end
-                    #end
-                }
+                onComplete: function(twn:FlxTween) {}
             });
-            if (Conductor.songPosition > ModchartUtil.getTimeFromBeat(beat)) //skip to where it should be i guess??
+            if (Conductor.instance.songPosition > ModchartUtil.getTimeFromBeat(beat)) //skip to where it should be i guess??
             {
                 @:privateAccess
-                tween._secondsSinceStart += ((Conductor.songPosition-ModchartUtil.getTimeFromBeat(beat))*0.001);
+                tween._secondsSinceStart += ((Conductor.instance.songPosition-ModchartUtil.getTimeFromBeat(beat))*0.001);
                 @:privateAccess
                 tween.update(0);
             }
@@ -194,7 +179,7 @@ class ModTable
         }
     }
 
-    public function tweenModifierSubValue(modifier:String, subValue:String, val:Float, time:Float, ease:String, beat:Float, ?tag:String = null)
+    public function tweenModifierSubValue(modifier:String, subValue:String, val:Float, time:Float, ease:String, beat:Float)
     {
         var modifiers:Map<String, Modifier> = renderer.modifierTable.modifiers;
         if (modifiers.exists(modifier))
@@ -206,7 +191,7 @@ class ModTable
 
                 var startValue = modifiers.get(modifier).subValues.get(subValue).value;
 
-                if (Conductor.songPosition >= ModchartUtil.getTimeFromBeat(beat)+(time*1000)) //cancel if should have ended
+                if (Conductor.instance.songPosition >= ModchartUtil.getTimeFromBeat(beat)+(time*1000)) //cancel if should have ended
                 {
                     modifiers.get(modifier).subValues.get(subValue).value = val;
                     return;
@@ -216,14 +201,6 @@ class ModTable
                     onComplete: function(twn:FlxTween) {
                         if (modifiers.exists(modifier))
                             modifiers.get(modifier).subValues.get(subValue).value = val;
-                        var modifierTag:String = (tag != null ? tag : '$modifier-$subValue');
-                        #if PSYCH
-                            #if (PSYCHVERSION >= "0.7")
-                            PlayState.instance.callOnScripts("onModifierComplete", [modifier, subValue]);
-                            #else
-                            PlayState.instance.callOnLuas("onModifierComplete", [modifier, subValue]);
-                            #end
-                        #end
                     },
                     onUpdate: function(twn:FlxTween) {
                         //need to update like this because its inside a map
@@ -231,10 +208,10 @@ class ModTable
                             modifiers.get(modifier).subValues.get(subValue).value = FlxMath.lerp(startValue, val, easefunc(twn.percent));
                     }
                 });
-                if (Conductor.songPosition > ModchartUtil.getTimeFromBeat(beat)) //skip to where it should be i guess??
+                if (Conductor.instance.songPosition > ModchartUtil.getTimeFromBeat(beat)) //skip to where it should be i guess??
                 {
                     @:privateAccess
-                    tween._secondsSinceStart += ((Conductor.songPosition-ModchartUtil.getTimeFromBeat(beat))*0.001);
+                    tween._secondsSinceStart += ((Conductor.instance.songPosition-ModchartUtil.getTimeFromBeat(beat))*0.001);
                     @:privateAccess
                     tween.update(0);
                 }
