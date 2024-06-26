@@ -193,6 +193,7 @@ class PlayfieldRenderer extends FlxSprite //extending flxsprite just so i can ed
         daNote.skew.x = noteData.skewX;
         daNote.skew.y = noteData.skewY;
         daNote.notePositionData = noteData;
+        daNote.noteScrollSpeed = this.getCorrectScrollSpeed();
     }
     private function createDataFromNote(noteIndex:Int, playfieldIndex:Int, curPos:Float, noteDist:Float, incomingAngle:Array<Float>):NotePositionData
     {
@@ -223,9 +224,9 @@ class PlayfieldRenderer extends FlxSprite //extending flxsprite just so i can ed
     private function getNoteCurPos(noteIndex:Int, strumTimeOffset:Float = 0):Float
     {
         if (this.notes.members[noteIndex].isSustainNote && ModchartUtil.getDownscroll(instance))
-            strumTimeOffset -= Std.int(Conductor.instance.stepCrochet/this.notes.members[noteIndex].noteScrollSpeed); //psych does this to fix its sustains but that breaks the visuals so basically reverse it back to normal
+            strumTimeOffset -= Std.int(Conductor.instance.stepCrochet/this.getCorrectScrollSpeed()); //psych does this to fix its sustains but that breaks the visuals so basically reverse it back to normal
         var distance:Float = (Conductor.instance.songPosition - this.notes.members[noteIndex].strumTime) + strumTimeOffset;
-        return distance*this.notes.members[noteIndex].noteScrollSpeed;
+        return distance*this.getCorrectScrollSpeed();
     }
     private function getLane(noteIndex:Int):Int
     {
@@ -283,7 +284,7 @@ class PlayfieldRenderer extends FlxSprite //extending flxsprite just so i can ed
                     incomingAngle[0] += 180; //make it match for both scrolls
 
                 //get the general note path
-                NoteMovement.setNotePath(notes.members[i], lane, this.notes.members[i].noteScrollSpeed, curPos, noteDist, incomingAngle[0], incomingAngle[1]);
+                NoteMovement.setNotePath(notes.members[i], lane, this.getCorrectScrollSpeed(), curPos, noteDist, incomingAngle[0], incomingAngle[1]);
 
                 //save the position data
                 var noteData = this.createDataFromNote(i, pf, curPos, noteDist, incomingAngle);
@@ -364,9 +365,10 @@ class PlayfieldRenderer extends FlxSprite //extending flxsprite just so i can ed
         daNote.mesh.scrollFactor.y = daNote.scrollFactor.y;
         daNote.alpha = noteData.alpha;
         daNote.mesh.alpha = daNote.alpha;
+        daNote.noteScrollSpeed = this.getCorrectScrollSpeed();
         daNote.notePositionData = noteData;
 
-        var songSpeed = this.notes.members[noteData.index].noteScrollSpeed;
+        var songSpeed = this.getCorrectScrollSpeed();
         var lane = noteData.lane;
 
         //makes the sustain match the center of the parent note when at weird angles
@@ -441,7 +443,7 @@ class PlayfieldRenderer extends FlxSprite //extending flxsprite just so i can ed
         if (noteDist < 0)
             incomingAngle[0] += 180; //make it match for both scrolls
         //get the general note path for the next note
-        NoteMovement.setNotePath(daNote, lane, daNote.noteScrollSpeed, curPos, noteDist, incomingAngle[0], incomingAngle[1]);
+        NoteMovement.setNotePath(daNote, lane, this.getCorrectScrollSpeed(), curPos, noteDist, incomingAngle[0], incomingAngle[1]);
         //save the position data
         var noteData:NotePositionData = createDataFromNote(noteData.index, pf, curPos, noteDist, incomingAngle);
         //add offsets to data with modifiers
