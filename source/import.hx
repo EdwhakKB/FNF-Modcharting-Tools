@@ -1,5 +1,5 @@
 #if LEATHER
-import states.PlayState;
+import states.PlayState
 import game.Song;
 import game.Section.SwagSection;
 import game.Note;
