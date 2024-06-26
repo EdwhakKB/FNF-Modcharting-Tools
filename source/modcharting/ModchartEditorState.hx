@@ -585,7 +585,6 @@ class ModchartEditorState extends states.MusicBeatState
                 } else {
                     spr = playerStrums.members[daNote.noteData];
                 }
-                spr.resetAnim = Conductor.instance.stepCrochet * 1.25 / 1000 / playbackSpeed;
                 if (ClientPrefs.data.vanillaStrumAnimations)
                 {
                     if (daNote.isSustainNote) spr.holdConfirm();
@@ -593,6 +592,7 @@ class ModchartEditorState extends states.MusicBeatState
                 }else{
                     spr.playAnim("confirm", true);
                 }
+                spr.resetAnim = Conductor.instance.stepCrochet * 1.25 / 1000 / playbackSpeed;
                 if (PlayState.currentChart != null && !PlayState.currentChart.options.disableStrumRGB)
                 {
                     spr.rgbShader.r = daNote.rgbShader.r;
